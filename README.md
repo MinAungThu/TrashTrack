@@ -19,10 +19,9 @@ TrashTrack AI is a simple prototype for detecting garbage using YOLOv6 (You Only
 
 ## Future Developments (Things to Improve)
 
-- **Better Accuracy:** The model isn’t perfect yet. Training it with more data could improve accuracy.
-- **More Object Classes:** Right now, it only detects garbage. We could add more classes like recycling, plastic, paper, etc.
-- **Deployment:** We could make this available online so more people can use it.
-- **Mobile Version:** It would be awesome to have a version that works on smartphones!
+- **Better Accuracy:** The model needs to be trained with more data to achieve better accuracy 
+- **Robust Development and Deployment:** This prototype is only built with minimal flask and javascript without even utilizing database functions.
+
 
 ---
 
