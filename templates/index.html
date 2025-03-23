@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrashTrack AI</title>
+  <style>
+    body {
+      background-color: #212121;
+      color: #1496bb;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    video, canvas {
+      border: 2px solid #1496bb;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #1496bb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0d6efd;
+    }
+    .dashboard {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .results, .history {
+      width: 45%;
+      border: 2px solid #1496bb;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #1496bb;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #1496bb;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TrashTrack AI</h1>
+  <video id="video" width="640" height="480" autoplay muted></video>
+  <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+  <div>
+    <button id="start-btn">Start Camera</button>
+    <button id="stop-btn">Stop Camera</button>
+  </div>
+
+  <div class="dashboard">
+    <div class="results">
+      <h2>Detection Results</h2>
+      <pre id="results">No detections yet.</pre>
+    </div>
+    <div class="history">
+      <h2>Detection History</h2>
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Object</th>
+            <th>Confidence</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const results = document.getElementById('results');
+    const historyBody = document.getElementById('history-body');
+    let stream = null;
+    let intervalId = null;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        intervalId = setInterval(captureAndSendFrame, 1000);
+      } catch (err) {
+        results.textContent = 'Error accessing camera: ' + err.message;
+      }
+    }
+
+    function stopCamera() {
+      clearInterval(intervalId);
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      results.textContent = 'Camera stopped.';
+    }
+
+    function captureAndSendFrame() {
+      const scaleFactor = 0.5;
+      canvas.width = video.videoWidth * scaleFactor;
+      canvas.height = video.videoHeight * scaleFactor;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataURL = canvas.toDataURL('image/png');
+      fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataURL })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (data.error) {
+          results.innerHTML = `<span style="color: red;">Error: ${data.error}</span>`;
+        } else {
+          if (data.predictions.length > 0) {
+            results.innerHTML = data.predictions.map(p => `Detected: ${p.class} (${p.confidence}%)`).join('<br>');
+          } else {
+            results.innerHTML = 'No objects detected.';
+          }
+          data.predictions.forEach(prediction => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${prediction.class}</td>
+              <td>${prediction.confidence}%</td>
+              <td>${new Date().toLocaleTimeString()}</td>
+            `;
+            historyBody.appendChild(row);
+          });
+        }
+      })
+      .catch(err => {
+        results.innerHTML = `<span style="color: red;">Request failed: ${err.message}</span>`;
+      });
+    }
+
+    startBtn.onclick = () => {
+      if (!stream) startCamera();
+    };
+    stopBtn.onclick = stopCamera;
+  </script>
+
+</body>
+</html>
