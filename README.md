@@ -12,7 +12,6 @@ TrashTrack AI is a simple prototype for detecting garbage using YOLOv6 (You Only
 
 - **Real-time Camera Feed:** The model can be connected to IP cameras to conduct real-time monitoring. 
 
-- **History of Results:** The app stores a history of everything the AI detects. 
 
 ---
 
@@ -20,7 +19,7 @@ TrashTrack AI is a simple prototype for detecting garbage using YOLOv6 (You Only
 ## Future Developments (Things to Improve)
 
 - **Better Accuracy:** The model needs to be trained with more data to achieve better accuracy 
-- **Robust Development and Deployment:** This prototype is only built with minimal flask and javascript without even utilizing database functions.
+- **Robust Development and Deployment:** This prototype is only built with minimal flask and javascript without even utilizing database functions. A proper dashboard displaying the detected results and an alarm system for littering activities need to be developed.
 
 
 ---
